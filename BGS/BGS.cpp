@@ -163,7 +163,7 @@ void main()
 
 
 	//Declare a VideoCapture object to store incoming frame and initialize it
-	cv::VideoCapture capture("E:\\PETS2009_sample_1.avi");
+	cv::VideoCapture capture("E:\\sample.avi");
 	//union{
 	//	int value_1;
 	//	char c[4];
