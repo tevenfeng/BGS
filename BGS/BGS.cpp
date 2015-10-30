@@ -8,14 +8,8 @@
 #include <iostream>
 #include <conio.h>
 #include <opencv2\features2d\features2d.hpp>
-//#include <opencv2\Blob_detection.hpp>
 #include <vector>
-//#include <tbb\parallel_for.h>
-//#include <tbb\blocked_range.h>
 
-
-
-//Some constants for the algorithm
 const double pi = 3.142;
 const double cthr = 0.00001;
 const double alpha = 0.002;
@@ -26,14 +20,13 @@ const double cfbar = 1.0 - cf;
 const double temp_thr = 9.0*covariance0*covariance0;
 const double prune = -alpha*cT;
 const double alpha_bar = 1.0 - alpha;
-//Temperory variable
 int overall = 0;
 
-//Structure used for saving various components for each pixel
+//存储每个像素点的各种属性值
 struct gaussian
 {
 	double mean[3], covariance;
-	double weight;								// Represents the measure to which a particular component defines the pixel value
+	double weight;								
 	gaussian* Next;
 	gaussian* Previous;
 } *ptr, *start, *rear, *g_temp, *save, *next, *previous, *nptr, *temp_ptr;
@@ -54,7 +47,7 @@ struct Node1
 	Node1* Next;
 } *N1_ptr, *N1_start, *N1_rear;
 
-//Some function associated with the structure management
+//方便管理像素点结构体的一些函数定义
 Node* Create_Node(double info1, double info2, double info3);
 void Insert_End_Node(Node* np);
 gaussian* Create_gaussian(double info1, double info2, double info3);
@@ -158,49 +151,27 @@ void main()
 	i = j = k = 0;
 
 	// Declare matrices to store original and resultant binary image
+	//存储原始二值图像以及相应的二值图像
 	cv::Mat orig_img, bin_img;
-	//std::vector<std::vector<cv::Point>> contours;
-
 
 	//Declare a VideoCapture object to store incoming frame and initialize it
-	cv::VideoCapture capture("E:\\sample.avi");
-	//union{
-	//	int value_1;
-	//	char c[4];
-	//} ret;
-	//
-	//ret.value_1 = capture.get(CV_CAP_PROP_FOURCC);
-	//int ff = capture.get(CV_CAP_PROP_FPS);
-	//cv::VideoCapture capture("sample3.avi");
-
-	//Checking if input source is valid
-	/*if(!capture.read(orig_img))
-	{
-	std::cout << " Can't recieve input from source ";
-	getch();
-	exit(0);
-	}*/
+	//读取视频文件
+	cv::VideoCapture capture("E:\\Coding\\C#\\sample.avi");
 
 	//Recieveing input from the source and converting it to grayscale
+	//将视频文件图像帧转换为灰度图
 	capture.read(orig_img);
-	//orig_img = cv::imread("BG_abs.jpg");
 	cv::resize(orig_img, orig_img, cv::Size(340, 260));
 	cv::cvtColor(orig_img, orig_img, CV_BGR2YCrCb);
-	//cv::GaussianBlur(orig_img, orig_img, cv::Size(3,3), 3.0);
 
 	//Initializing the binary image with the same dimensions as original image
+	//初始化临时二值图像变量
 	bin_img = cv::Mat(orig_img.rows, orig_img.cols, CV_8U, cv::Scalar(0));
 
 	double value[3];
-	//cv::SURF gp;
-	//cv::KeyPoint gp1;
-	//std::vector<cv::KeyPoint,std::allocator<cv::KeyPoint>> gp2;
-
-	//gp(orig_img,cv::Mat(),gp2);
-	//gp2[0].pt.x;
-	//gp2[0].pt.y;
 
 	//Step 1: initializing with one gaussian for the first time and keeping the no. of models as 1
+	//第一步：第一次初始化时只使用一个高斯模型，置模型数为1
 	cv::Vec3f val;
 	uchar* r_ptr;
 	uchar* b_ptr;
@@ -254,6 +225,7 @@ void main()
 	double muR, muG, muB, dR, dG, dB, rVal, gVal, bVal;
 
 	//Step 2: Modelling each pixel with Gaussian
+	//第二部：对每个像素使用高斯模型进行建模
 	duration1 = static_cast<double>(cv::getTickCount());
 	bin_img = cv::Mat(orig_img.rows, orig_img.cols, CV_8UC1, cv::Scalar(0));
 	while (1)
@@ -266,16 +238,9 @@ void main()
 			capture = cv::VideoCapture("PETS2009_sample_1.avi");
 			capture.read(orig_img);
 		}
-		//break;
+
 		int count = 0;
 		int count1 = 0;
-		//cv::resize(orig_img,orig_img,cv::Size(340,260));
-		//cv::Mat result(bin_img.size(),CV_8U,cv::Scalar(255));
-
-		//cv::cvtColor(orig_img, orig_img, CV_BGR2YCrCb);
-		//cv::GaussianBlur(orig_img, orig_img, cv::Size(3,3), 3.0);
-
-		//cv::cvtColor(bin_img, bin_img, CV_RGB2GRAY);
 
 		N_ptr = N_start;
 		duration = static_cast<double>(cv::getTickCount());
@@ -324,11 +289,6 @@ void main()
 						dG = gVal - muG;
 						dB = bVal - muB;
 
-						/*del[0] = value[0]-ptr->mean[0];
-						del[1] = value[1]-ptr->mean[1];
-						del[2] = value[2]-ptr->mean[2];*/
-
-
 						var = ptr->covariance;
 
 						mal_dist = (dR*dR + dG*dG + dB*dB);
@@ -339,15 +299,13 @@ void main()
 						if (mal_dist < 9.0*var*var)
 						{
 							weight += alpha;
-							//mult = mult < 20.0*alpha ? mult : 20.0*alpha;
 
 							close = true;
 
 							ptr->mean[0] = muR + mult*dR;
 							ptr->mean[1] = muG + mult*dG;
 							ptr->mean[2] = muB + mult*dB;
-							//if( mult < 20.0*alpha)
-							//temp_cov = ptr->covariance*(1+mult*(mal_dist - 1));
+
 							temp_cov = var + mult*(mal_dist - var);
 							ptr->covariance = temp_cov<5.0 ? 5.0 : (temp_cov>20.0 ? 20.0 : temp_cov);
 							temp_ptr = ptr;
@@ -363,7 +321,6 @@ void main()
 					}
 					else
 					{
-						//if(ptr->weight > 0)
 						sum += weight;
 						ptr->weight = weight;
 					}
@@ -383,9 +340,8 @@ void main()
 					ptr->covariance = covariance0;
 					ptr->Next = NULL;
 					ptr->Previous = NULL;
-					//Insert_End_gaussian(ptr);
+
 					if (start == NULL)
-						// ??
 						start = rear = NULL;
 					else
 					{
@@ -410,7 +366,6 @@ void main()
 						break;
 					else
 					{
-						//count++;
 						next = temp_ptr->Next;
 						previous = temp_ptr->Previous;
 						if (start == previous)
@@ -435,10 +390,7 @@ void main()
 				N_ptr->pixel_s = start;
 				N_ptr->pixel_r = rear;
 
-				//if(background == 1)
 				*b_ptr++ = background;
-				//else
-				//bin_img.at<uchar>(i,j) = 0;
 				N_ptr = N_ptr->Next;
 			}
 		}
@@ -452,8 +404,6 @@ void main()
 
 		cv::imshow("video", orig_img);
 		cv::imshow("gp", bin_img);
-		//cv::imshow("video", mal);
-		//cv::imshow("result", result);
 		if (cv::waitKey(1)>0)
 			break;
 	}
