@@ -22,7 +22,7 @@ const double prune = -alpha*cT;
 const double alpha_bar = 1.0 - alpha;
 int overall = 0;
 
-//存储每个像素点的各种属性值
+//高斯模型
 struct gaussian
 {
 	double mean[3], covariance;
@@ -145,6 +145,9 @@ gaussian* Delete_gaussian(gaussian* nptr)
 	return nptr;
 }
 
+
+
+//主函数
 void main()
 {
 	int i, j, k;
@@ -165,7 +168,7 @@ void main()
 	cv::cvtColor(orig_img, orig_img, CV_BGR2YCrCb);
 
 	//Initializing the binary image with the same dimensions as original image
-	//初始化临时二值图像变量
+	//初始化临时二值图像变量（维度与原图像一致）
 	bin_img = cv::Mat(orig_img.rows, orig_img.cols, CV_8U, cv::Scalar(0));
 
 	double value[3];
@@ -177,8 +180,8 @@ void main()
 	uchar* b_ptr;
 	for (i = 0; i<orig_img.rows; i++)
 	{
-		r_ptr = orig_img.ptr(i);
-		for (j = 0; j<orig_img.cols; j++)
+		r_ptr = orig_img.ptr(i);		//获取一行像素点
+		for (j = 0; j<orig_img.cols; j++)		//获取第i行上第j列的像素点
 		{
 
 			N_ptr = Create_Node(*r_ptr, *(r_ptr + 1), *(r_ptr + 2));
