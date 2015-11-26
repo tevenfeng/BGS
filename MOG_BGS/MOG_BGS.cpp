@@ -2,12 +2,9 @@
 //
 
 #include "stdafx.h"
-// This is based on the "An Improved Adaptive Background Mixture Model for
-// Real-time Tracking with Shadow Detection" by P. KaewTraKulPong and R. Bowden
-// Author : zouxy
-// Date   : 2013-4-13
-// HomePage : http://blog.csdn.net/zouxy09
-// Email  : zouxy09@qq.com
+//使用前60帧来训练GMM模型；模型训练完成后，继续读取
+//视频的后续帧，对每个像素点使用训练好的模型来判断是
+//否属于背景中的像素点。
 
 #include <opencv2\core\core.hpp>
 #include <opencv2\imgproc\imgproc.hpp>
@@ -30,15 +27,14 @@ MOG_BGS::~MOG_BGS(void)
 
 }
 
-// 全部初始化为0
+// 高斯分布初始化为0
 void MOG_BGS::init(const Mat _image)
 {
-	/****initialization the three parameters ****/
 	for (int i = 0; i < GMM_MAX_COMPONT; i++)
 	{
-		m_weight[i] = Mat::zeros(_image.size(), CV_32FC1);
-		m_mean[i] = Mat::zeros(_image.size(), CV_8UC1);
-		m_sigma[i] = Mat::zeros(_image.size(), CV_32FC1);
+		m_weight[i] = Mat::zeros(_image.size(), CV_32FC1);      //每个高斯分布的权值
+		m_mean[i] = Mat::zeros(_image.size(), CV_8UC1);			//每个高斯分布的均值
+		m_sigma[i] = Mat::zeros(_image.size(), CV_32FC1);		//每个高斯分布的方差
 	}
 	m_mask = Mat::zeros(_image.size(), CV_8UC1);
 	m_fit_num = Mat::ones(_image.size(), CV_8UC1);
@@ -76,7 +72,7 @@ void MOG_BGS::trainGMM(const Mat _image)
 		{
 			int num_fit = 0;
 
-			/**************************** Update parameters Start ******************************************/
+			//开始更新
 			for (int k = 0; k < GMM_MAX_COMPONT; k++)
 			{
 				int delm = abs(_image.at<uchar>(i, j) - m_mean[k].at<uchar>(i, j));
@@ -101,10 +97,8 @@ void MOG_BGS::trainGMM(const Mat _image)
 					num_fit++; // 不匹配的模型个数
 				}
 			}
-			/**************************** Update parameters End ******************************************/
 
 
-			/*********************** Sort Gaussian component by 'weight / sigma' Start ****************************/
 			//对gmm各个高斯进行排序,从大到小排序,排序依据为 weight / sigma
 			for (int kk = 0; kk < GMM_MAX_COMPONT; kk++)
 			{
@@ -129,13 +123,10 @@ void MOG_BGS::trainGMM(const Mat _image)
 					}
 				}
 			}
-			/*********************** Sort Gaussian model by 'weight / sigma' End ****************************/
 
 
-			/*********************** Create new Gaussian component Start ****************************/
 			if (num_fit == GMM_MAX_COMPONT && 0 == m_weight[GMM_MAX_COMPONT - 1].at<float>(i, j))
 			{
-				//if there is no exit component fit,then start a new component
 				//当有新值出现的时候，若目前分布个数小于M，新添一个分布，以新采样值作为均值，并赋予较大方差和较小权值
 				for (int k = 0; k < GMM_MAX_COMPONT; k++)
 				{
@@ -145,11 +136,9 @@ void MOG_BGS::trainGMM(const Mat _image)
 						m_mean[k].at<uchar>(i, j) = _image.at<uchar>(i, j);
 						m_sigma[k].at<float>(i, j) = 15.0;
 
-						//normalization the weight,let they sum to 1
 						for (int q = 0; q < GMM_MAX_COMPONT && q != k; q++)
 						{
-							//对其他的高斯模型的权值进行更新，保持权值和为1
-							/****update the other unfit's weight,u and sigma remain unchanged****/
+							//对其他的高斯模型的权值进行更新，保持权值和为1						
 							m_weight[q].at<float>(i, j) *= (1 - GMM_LEARN_ALPHA);
 						}
 						break; //找到第一个权值不为0的即可
@@ -162,7 +151,6 @@ void MOG_BGS::trainGMM(const Mat _image)
 				m_mean[GMM_MAX_COMPONT - 1].at<uchar>(i, j) = _image.at<uchar>(i, j);
 				m_sigma[GMM_MAX_COMPONT - 1].at<float>(i, j) = 15.0;
 			}
-			/*********************** Create new Gaussian component End ****************************/
 		}
 	}
 }

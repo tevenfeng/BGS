@@ -227,8 +227,7 @@ void main()
 	double var = 0.0;
 	double muR, muG, muB, dR, dG, dB, rVal, gVal, bVal;
 
-	//Step 2: Modelling each pixel with Gaussian
-	//第二部：对每个像素使用高斯模型进行建模
+	//第二步：对每个像素使用高斯模型进行建模
 	duration1 = static_cast<double>(cv::getTickCount());
 	bin_img = cv::Mat(orig_img.rows, orig_img.cols, CV_8UC1, cv::Scalar(0));
 	while (1)
